@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "120371881170",
+    "project_id": "keeper-c767f",
+    "storage_bucket": "keeper-c767f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:120371881170:android:5a3795249708493427390b",
+        "android_client_info": {
+          "package_name": "com.dev.keeper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-gvU4ranCjgb9fwiSLQBpOjMvj3Zpf90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
