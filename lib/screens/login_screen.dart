@@ -48,6 +48,36 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _signInWithGoogle(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await _authService.signInWithGoogle();
+    } catch (e) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Google Sign-In Failed'),
+          content: Text(e.toString().split('] ').last),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,12 +122,30 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: () => _login(context),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text('Login'),
+                    : Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () => _login(context),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: const Text('Login'),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('OR'),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () => _signInWithGoogle(context),
+                            icon: Image.network(
+                              'https://www.google.com/favicon.ico',
+                              height: 24,
+                            ),
+                            label: const Text('Continue with Google'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ],
                       ),
                 TextButton(
                   onPressed: () {
