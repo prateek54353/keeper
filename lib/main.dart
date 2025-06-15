@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:keeper/screens/auth_gate.dart';
+import 'package:keeper/screens/google_sign_in_wrapper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
           textTheme: GoogleFonts.poppinsTextTheme(
               Theme.of(context).textTheme.apply(bodyColor: Colors.white)),
         ),
-        home: const AuthGate(),
+        home: const GoogleSignInWrapper(),
       ),
     );
   }

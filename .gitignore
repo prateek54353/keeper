@@ -44,28 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Firebase configuration files
+# Firebase Configuration Files
 google-services.json
-GoogleService-Info.plist
-.firebaserc
-firebase.json
-firestore.rules
-firestore.indexes.json
+**/GoogleService-Info.plist
 
-# Environment files
+# Environment variables (if you use .env files)
 .env
-.env.*
-*.env
-
-# Keystore files
-*.keystore
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-*.orig.*
-
-# Generated files
-*.g.dart
-*.freezed.dart

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:keeper/screens/note_editor_screen.dart';
 import 'package:keeper/screens/notes_screen.dart';
 import 'package:keeper/screens/settings_screen.dart';
-import 'package:keeper/screens/tasks_screen.dart';
 import 'package:keeper/services/firestore_service.dart';
 import 'package:keeper/widgets/responsive_layout.dart';
+import 'package:keeper/screens/search_screen.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
@@ -30,7 +30,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
     // Initialize screens with the FirestoreService instance
     _screens.addAll([
       const NotesScreen(),
-      const TasksScreen(),
     ]);
 
     // Listen for auth state changes
@@ -57,35 +56,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
     );
   }
 
-  void _openAddTaskDialog() {
-    final TextEditingController taskController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Task'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: TextField(
-            controller: taskController,
-            decoration: const InputDecoration(
-              labelText: 'Task',
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _firestoreService.addTask(taskController.text);
-              Navigator.pop(context);
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return ResponsiveLayout(
@@ -97,8 +67,23 @@ class _NavigationScreenState extends State<NavigationScreen> {
   Widget _buildMobileLayout() {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Notes' : 'Tasks'),
+        title: const Text('Notes'),
         actions: [
+          Hero(
+            tag: 'searchBarHero',
+            child: Material(
+              color: Colors.transparent,
+              child: IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SearchScreen(firestoreService: _firestoreService)),
+                  );
+                },
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -112,28 +97,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
       ),
       body: _screens[_selectedIndex],
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addNoteMobileFab',
         onPressed: () {
-          if (_selectedIndex == 0) {
             _navigateToAddNote();
-          } else if (_selectedIndex == 1) {
-            _openAddTaskDialog();
-          }
         },
         child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.note),
-            label: 'Notes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_box),
-            label: 'Tasks',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }
@@ -141,8 +109,23 @@ class _NavigationScreenState extends State<NavigationScreen> {
   Widget _buildDesktopLayout() {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Notes' : 'Tasks'),
+        title: const Text('Notes'),
         actions: [
+          Hero(
+            tag: 'searchBarHero',
+            child: Material(
+              color: Colors.transparent,
+              child: IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SearchScreen(firestoreService: _firestoreService)),
+                  );
+                },
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -166,11 +149,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 selectedIcon: Icon(Icons.note),
                 label: Text('Notes'),
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.check_box_outline_blank),
-                selectedIcon: Icon(Icons.check_box),
-                label: Text('Tasks'),
-              ),
             ],
           ),
           const VerticalDivider(thickness: 1, width: 1),
@@ -180,12 +158,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addNoteDesktopFab',
         onPressed: () {
-          if (_selectedIndex == 0) {
             _navigateToAddNote();
-          } else if (_selectedIndex == 1) {
-            _openAddTaskDialog();
-          }
         },
         child: const Icon(Icons.add),
       ),

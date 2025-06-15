@@ -1,17 +1,16 @@
-import 'dart:io';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:keeper/screens/drawing_screen.dart';
 import 'package:keeper/services/firestore_service.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:keeper/providers/settings_provider.dart';
 
 class NoteEditorScreen extends StatefulWidget {
   final FirestoreService firestoreService;
   final String? docID;
   final String? title;
   final String? content;
-  final List<String>? imageUrls;
+  final List<String>? tags;
 
   const NoteEditorScreen({
     super.key,
@@ -19,7 +18,7 @@ class NoteEditorScreen extends StatefulWidget {
     this.docID,
     this.title,
     this.content,
-    this.imageUrls,
+    this.tags,
   });
 
   @override
@@ -29,195 +28,144 @@ class NoteEditorScreen extends StatefulWidget {
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final FocusNode _titleFocusNode = FocusNode();
-  final FocusNode _contentFocusNode = FocusNode();
-
-  bool _showToolbar = false;
-  final List<String> _imageUrls = [];
-  final ImagePicker _picker = ImagePicker();
+  final TextEditingController _tagController = TextEditingController();
+  List<String> _tags = [];
+  Timer? _debounce;
+  bool _isNewNote = true;
 
   @override
   void initState() {
     super.initState();
-    if (widget.docID != null) {
-      _titleController.text = widget.title ?? '';
-      _contentController.text = widget.content ?? '';
-      if (widget.imageUrls != null) {
-        _imageUrls.addAll(widget.imageUrls!);
-      }
+    _titleController.text = widget.title ?? '';
+    _contentController.text = widget.content ?? '';
+    _isNewNote = widget.docID == null;
+    if (widget.tags != null) {
+      _tags.addAll(widget.tags!);
     }
-    _titleFocusNode.addListener(_onFocusChange);
-    _contentFocusNode.addListener(_onFocusChange);
-    _contentController.addListener(_onContentChange);
   }
 
   @override
   void dispose() {
-    _titleFocusNode.removeListener(_onFocusChange);
-    _contentFocusNode.removeListener(_onFocusChange);
-    _contentController.removeListener(_onContentChange);
-
     _titleController.dispose();
     _contentController.dispose();
-    _titleFocusNode.dispose();
-    _contentFocusNode.dispose();
+    _tagController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
-  void _onFocusChange() {
-    setState(() {
-      _showToolbar = _titleFocusNode.hasFocus || _contentFocusNode.hasFocus;
-    });
-  }
-
-  void _onContentChange() {
-    setState(() {
-      // Rebuild to update character count
-    });
-  }
-
   void _saveNote() {
-    if (_titleController.text.isNotEmpty ||
-        _contentController.text.isNotEmpty ||
-        _imageUrls.isNotEmpty) {
-      if (widget.docID == null) {
+    if (_titleController.text.isNotEmpty || _contentController.text.isNotEmpty || _tags.isNotEmpty) {
+      if (_isNewNote) {
         widget.firestoreService.addNote(
           _titleController.text,
           _contentController.text,
-          imageUrls: _imageUrls,
+          tags: _tags,
         );
+        _isNewNote = false;
       } else {
         widget.firestoreService.updateNote(
           widget.docID!,
           _titleController.text,
           _contentController.text,
-          imageUrls: _imageUrls,
+          tags: _tags,
         );
       }
     }
-    Navigator.of(context).pop();
   }
 
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      final imageUrl = await widget.firestoreService.uploadImage(File(image.path));
+  void _onTextChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _saveNote();
+    });
+  }
+
+  void _addTag(String tag) {
+    if (tag.trim().isNotEmpty && !_tags.contains(tag.trim())) {
       setState(() {
-        _imageUrls.add(imageUrl);
+        _tags.add(tag.trim());
       });
+      _tagController.clear();
+      _saveNote();
     }
   }
 
-  Future<void> _openDrawingPad() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            DrawingScreen(firestoreService: widget.firestoreService),
-      ),
-    );
-    if (result != null && result is String) {
-      setState(() {
-        _imageUrls.add(result);
-      });
-    }
+  void _removeTag(String tag) {
+    setState(() {
+      _tags.remove(tag);
+    });
+    _saveNote();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.textTheme.bodyLarge?.color),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.undo, color: theme.textTheme.bodyLarge?.color)),
-          IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.redo, color: theme.textTheme.bodyLarge?.color)),
-          IconButton(
-            onPressed: _saveNote,
-            icon: Icon(Icons.check, color: theme.textTheme.bodyLarge?.color),
-          ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Hero(
+              tag: 'note_title_${widget.docID ?? "new"}',
+              child: Material(
+                color: Colors.transparent,
+                child: TextField(
                   controller: _titleController,
-                  focusNode: _titleFocusNode,
+                  style: GoogleFonts.getFont(settings.fontFamily).copyWith(
+                    fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
+                  ),
                   decoration: const InputDecoration(
                     hintText: 'Title',
                     border: InputBorder.none,
                   ),
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  maxLines: null,
+                  onChanged: (_) => _onTextChanged(),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '${DateFormat.yMMMMd().add_jm().format(DateTime.now())} | ${_contentController.text.length} characters',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _contentController,
+                  maxLines: null,
+                  decoration: const InputDecoration(
+                    hintText: 'Start writing...',
+                    border: InputBorder.none,
+                  ),
+                  style: GoogleFonts.getFont(settings.fontFamily).copyWith(
+                    fontSize: settings.fontSize,
+                  ),
+                  onChanged: (_) => _onTextChanged(),
                 ),
                 const SizedBox(height: 16),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _contentController,
-                          focusNode: _contentFocusNode,
-                          decoration: const InputDecoration(
-                            hintText: 'Start typing',
-                            border: InputBorder.none,
-                          ),
-                          style: const TextStyle(fontSize: 18),
-                          maxLines: null,
-                        ),
-                        ..._imageUrls.map((url) => Image.network(url)),
-                      ],
+                // Tags Section
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 4.0,
+                  children: _tags.map((tag) {
+                    return Chip(
+                      label: Text(tag),
+                      onDeleted: () => _removeTag(tag),
+                    );
+                  }).toList(),
+                ),
+                TextField(
+                  controller: _tagController,
+                  decoration: InputDecoration(
+                    hintText: 'Add tags (e.g., #work, #personal)',
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () => _addTag(_tagController.text),
                     ),
                   ),
+                  onSubmitted: _addTag,
                 ),
               ],
             ),
           ),
-        ),
-      ),
-      bottomNavigationBar: _showToolbar
-          ? BottomAppBar(
-              elevation: 4,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  IconButton(
-                      onPressed: () {}, icon: const Icon(Icons.mic_none)),
-                  IconButton(
-                      onPressed: _pickImage,
-                      icon: const Icon(Icons.image_outlined)),
-                  IconButton(
-                      onPressed: _openDrawingPad,
-                      icon: const Icon(Icons.gesture)),
-                  IconButton(
-                      onPressed: () {}, icon: const Icon(Icons.check_box_outline_blank)),
-                  IconButton(
-                      onPressed: () {}, icon: const Icon(Icons.text_fields)),
-                ],
-              ),
-            )
-          : null,
+        );
+      },
     );
   }
 } 

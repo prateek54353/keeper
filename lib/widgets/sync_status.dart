@@ -13,25 +13,34 @@ class SyncStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (hasPendingWrites) {
-      return const Icon(
-        Icons.sync,
-        size: 16,
-        color: Colors.orange,
+      return Tooltip(
+        message: 'Pending local changes',
+        child: Icon(
+          Icons.sync_outlined,
+          size: 20,
+          color: Theme.of(context).colorScheme.tertiary,
+        ),
       );
     }
 
     if (isFromCache) {
-      return const Icon(
-        Icons.cloud_off,
-        size: 16,
-        color: Colors.grey,
+      return Tooltip(
+        message: 'Data loaded from cache (offline)',
+        child: Icon(
+          Icons.cloud_off_outlined,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        ),
       );
     }
 
-    return const Icon(
-      Icons.cloud_done,
-      size: 16,
-      color: Colors.green,
+    return Tooltip(
+      message: 'Data synced',
+      child: Icon(
+        Icons.cloud_done_outlined,
+        size: 20,
+        color: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 } 
