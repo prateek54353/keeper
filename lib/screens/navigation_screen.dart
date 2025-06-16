@@ -89,7 +89,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                MaterialPageRoute(builder: (context) => SettingsScreen(firestoreService: _firestoreService)),
               );
             },
           ),
@@ -131,7 +131,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                MaterialPageRoute(builder: (context) => SettingsScreen(firestoreService: _firestoreService)),
               );
             },
           ),

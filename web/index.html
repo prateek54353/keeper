@@ -18,7 +18,11 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Keeper - Your Personal Note Taking App">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google Sign-In Client ID -->
+  <meta name="google-signin-client_id" content="120371881170-io0ohi23jcf38ev7fhledaibk9gib43a.apps.googleusercontent.com">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -29,10 +33,41 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>Keeper</title>
+  <title>Keeper - Notes App</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
+  <div id="loading" class="loading">
+    Loading Keeper...
+  </div>
+  <script>
+    window.addEventListener('load', function() {
+      var loading = document.querySelector('#loading');
+      loading.style.display = 'none';
+    });
+  </script>
+  <script src="firebase-config.js"></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

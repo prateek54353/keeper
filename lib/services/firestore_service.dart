@@ -20,7 +20,7 @@ class FirestoreService {
       _db.collection('users').doc(uid).collection('deleted_notes');
 
   // C R E A T E
-  Future<void> addNote(String title, String content, {List<String> tags = const []}) async {
+  Future<void> addNote(String title, String content, {bool isLocked = false}) async {
     try {
       await notes.add({
         'title': title,
@@ -29,7 +29,7 @@ class FirestoreService {
         'lastModified': FieldValue.serverTimestamp(),
         'userId': uid,
         'isDeleted': false,
-        'tags': tags,
+        'isLocked': isLocked,
       });
     } catch (e) {
       rethrow;
@@ -59,14 +59,17 @@ class FirestoreService {
   }
 
   // U P D A T E
-  Future<void> updateNote(String docID, String newTitle, String newContent, {List<String> tags = const []}) async {
+  Future<void> updateNote(String docID, String newTitle, String newContent, {bool? isLocked}) async {
     try {
-      await notes.doc(docID).update({
+      Map<String, dynamic> updateData = {
         'title': newTitle,
         'content': newContent,
         'lastModified': FieldValue.serverTimestamp(),
-        'tags': tags,
-      });
+      };
+      if (isLocked != null) {
+        updateData['isLocked'] = isLocked;
+      }
+      await notes.doc(docID).update(updateData);
     } catch (e) {
       rethrow;
     }

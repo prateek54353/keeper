@@ -23,7 +23,7 @@ Keeper is a modern, cross-platform note-taking application built with Flutter an
 
 ## 📸 Screenshots
 
-*(Replace this section with actual screenshots or GIFs of your app running on Android and Web. For best results, name them something like `screenshots/android_home.png`, `screenshots/web_login.gif` etc., and update the paths below.)*
+
 
 <p align="center">
   <img src="https://via.placeholder.com/400x700?text=Android+Screenshot" alt="Android App Screenshot" width="300" style="margin-right: 20px;">
@@ -154,7 +154,7 @@ Keeper uses Firebase for authentication and data storage. You'll need to set up 
 2.  **Enable Firebase Services:**
     *   In your Firebase project, navigate to "Build" -> "Authentication" -> "Sign-in method" and enable **"Email/Password"** and **"Google"**.
     *   Navigate to "Build" -> "Firestore Database" and create a database. Choose a starting security rule (e.g., "Start in test mode" for quick setup, but **update rules for production**).
-    *   Ensure the **Google People API** is enabled in your [Google Cloud Console](https://console.cloud.google.com/apis/api/people.googleapis.com/overview?project=120371881170).
+    *   Ensure the **Google People API** is enabled in your [Google Cloud Console](https://console.cloud.google.com).
 
 3.  **Configure Android App (for your mobile build):**
     *   In Firebase Console, go to "Project settings" -> "Your apps".

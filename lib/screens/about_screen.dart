@@ -8,11 +8,11 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Hero(
+        title: const Hero(
           tag: 'aboutKeeperTitleHero',
           child: Material(
             color: Colors.transparent,
-            child: const Text('About Keeper'),
+            child: Text('About Keeper'),
           ),
         ),
       ),

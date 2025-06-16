@@ -9,6 +9,24 @@ import 'package:keeper/widgets/sync_status.dart';
 import 'package:keeper/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+// Import for ImageFilter
+
+// Performance optimization: Extract static widgets to avoid rebuilds
+class _EmptyNotesView extends StatelessWidget {
+  const _EmptyNotesView();
+
+  @override
+  Widget build(BuildContext context) => const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.note, size: 80, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No notes here yet'),
+          ],
+        ),
+      );
+}
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -67,6 +85,27 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
+  Future<void> _handleNoteTap(DocumentSnapshot document, SettingsProvider settings) async {
+    final data = document.data() as Map<String, dynamic>;
+    final docID = document.id;
+    final noteTitle = data['title'] ?? '';
+    final noteContent = data['content'] ?? '';
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NoteEditorScreen(
+            firestoreService: _firestoreService,
+            docID: docID,
+            title: noteTitle,
+            content: noteContent,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
@@ -74,7 +113,7 @@ class _NotesScreenState extends State<NotesScreen> {
     }
 
     return Consumer<SettingsProvider>(
-      builder: (context, settings, child) {
+      builder: (context, settings, _) {
         return Scaffold(
           body: StreamBuilder<QuerySnapshot>(
             stream: _firestoreService.getNotesStream(
@@ -91,48 +130,32 @@ class _NotesScreenState extends State<NotesScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (snapshot.hasData) {
-                List notesList = snapshot.data!.docs;
-
-                if (notesList.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.note, size: 80, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text('No notes here yet'),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: _refresh,
-                  child: ResponsiveLayout(
-                    mobileBody: settings.viewMode == NotesView.list
-                        ? _buildNotesList(notesList, settings)
-                        : _buildNotesGrid(notesList, 2, settings),
-                    tabletBody: _buildNotesGrid(notesList, 3, settings),
-                    desktopBody: _buildNotesGrid(notesList, 4, settings),
-                  ),
-                );
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const _EmptyNotesView();
               }
 
-              return const Center(child: CircularProgressIndicator());
-            },
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => NoteEditorScreen(
-                    firestoreService: _firestoreService,
-                  ),
+              final notesList = snapshot.data!.docs;
+              return RefreshIndicator(
+                onRefresh: _refresh,
+                child: ResponsiveLayout(
+                  mobileBody: settings.viewMode == NotesView.list
+                      ? _buildNotesList(notesList, settings)
+                      : _buildNotesGrid(notesList, 2, settings),
+                  tabletBody: _buildNotesGrid(notesList, 3, settings),
+                  desktopBody: _buildNotesGrid(notesList, 4, settings),
                 ),
               );
             },
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => NoteEditorScreen(
+                  firestoreService: _firestoreService,
+                ),
+              ),
+            ),
             child: const Icon(Icons.add),
           ),
         );
@@ -144,9 +167,7 @@ class _NotesScreenState extends State<NotesScreen> {
     return AnimationLimiter(
       child: ListView.builder(
         itemCount: notesList.length,
-        itemBuilder: (context, index) {
-          return _buildNoteCard(notesList[index], index, settings);
-        },
+        itemBuilder: (context, index) => _buildNoteCard(notesList[index], index, settings),
       ),
     );
   }
@@ -162,19 +183,15 @@ class _NotesScreenState extends State<NotesScreen> {
           childAspectRatio: 1,
         ),
         itemCount: notesList.length,
-        itemBuilder: (context, index) {
-          return _buildNoteCard(notesList[index], index, settings);
-        },
+        itemBuilder: (context, index) => _buildNoteCard(notesList[index], index, settings),
       ),
     );
   }
 
   Widget _buildNoteCard(DocumentSnapshot document, int index, SettingsProvider settings) {
-    String docID = document.id;
-    Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-    String noteTitle = data['title'];
-    String noteContent = data['content'];
-    List<String> tags = data['tags'] ?? [];
+    final data = document.data() as Map<String, dynamic>;
+    final String noteTitle = data['title'] ?? '';
+    final String noteContent = data['content'] ?? '';
 
     return AnimationConfiguration.staggeredList(
       position: index,
@@ -183,151 +200,45 @@ class _NotesScreenState extends State<NotesScreen> {
         verticalOffset: 50.0,
         child: FadeInAnimation(
           child: Card(
-            clipBehavior: Clip.antiAlias,
+            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => NoteEditorScreen(
-                      firestoreService: _firestoreService,
-                      docID: docID,
-                      title: noteTitle,
-                      content: noteContent,
-                    ),
-                  ),
-                );
-              },
-              child: settings.viewMode == NotesView.list
-                  ? ListTile(
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Hero(
-                              tag: 'note_title_$docID',
-                              child: Material(
-                                color: Colors.transparent,
-                                child: Text(
-                                  noteTitle,
-                                  style: GoogleFonts.getFont(settings.fontFamily).copyWith(
-                                    fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SyncStatus(
-                            hasPendingWrites: document.metadata.hasPendingWrites,
-                            isFromCache: document.metadata.isFromCache,
-                          ),
-                        ],
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              noteContent,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.getFont(settings.fontFamily).copyWith(
-                                fontSize: settings.fontSize * 0.85,
-                              ),
-                            ),
-                            if (tags.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Wrap(
-                                  spacing: 4.0,
-                                  runSpacing: 2.0,
-                                  children: tags.map((tag) => Chip(
-                                    label: Text(tag, style: TextStyle(fontSize: settings.fontSize * 0.7)),
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  )).toList(),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _confirmDelete(docID),
-                      ),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+              onTap: () => _handleNoteTap(document, settings),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
                         Expanded(
-                          flex: 3,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Hero(
-                                        tag: 'note_title_$docID',
-                                        child: Material(
-                                          color: Colors.transparent,
-                                          child: Text(
-                                            noteTitle,
-                                            style: GoogleFonts.getFont(settings.fontFamily).copyWith(
-                                              fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    SyncStatus(
-                                      hasPendingWrites: document.metadata.hasPendingWrites,
-                                      isFromCache: document.metadata.isFromCache,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  noteContent,
-                                  style: GoogleFonts.getFont(settings.fontFamily).copyWith(
-                                    fontSize: Theme.of(context).textTheme.bodyMedium?.fontSize,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (tags.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Wrap(
-                                      spacing: 4.0,
-                                      runSpacing: 2.0,
-                                      children: tags.map((tag) => Chip(
-                                        label: Text(tag, style: TextStyle(fontSize: settings.fontSize * 0.7)),
-                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      )).toList(),
-                                    ),
-                                  ),
-                                const Spacer(),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    IconButton(
-                                      onPressed: () => _confirmDelete(docID),
-                                      icon: const Icon(Icons.delete_outline),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                          child: Text(
+                            noteTitle,
+                            style: GoogleFonts.getFont(settings.fontFamily).copyWith(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        SyncStatus(
+                          hasPendingWrites: document.metadata.hasPendingWrites,
+                          isFromCache: document.metadata.isFromCache,
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      noteContent,
+                      style: GoogleFonts.getFont(settings.fontFamily).copyWith(
+                        fontSize: 14,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

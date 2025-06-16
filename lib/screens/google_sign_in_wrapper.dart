@@ -1,11 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:keeper/screens/navigation_screen.dart';
-import 'package:keeper/screens/google_sign_in_screen.dart';
+import 'package:keeper/screens/auth_screen.dart';
 
-class GoogleSignInWrapper extends StatelessWidget {
+class GoogleSignInWrapper extends StatefulWidget {
   const GoogleSignInWrapper({super.key});
 
+  @override
+  State<GoogleSignInWrapper> createState() => _GoogleSignInWrapperState();
+}
+
+class _GoogleSignInWrapperState extends State<GoogleSignInWrapper> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -18,7 +23,7 @@ class GoogleSignInWrapper extends StatelessWidget {
 
         // Not signed in
         if (!snapshot.hasData) {
-          return const GoogleSignInScreen();
+          return const AuthScreen();
         }
 
         // Signed in

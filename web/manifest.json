@@ -1,11 +1,11 @@
 {
-    "name": "keeper",
-    "short_name": "keeper",
+    "name": "Keeper Notes",
+    "short_name": "Keeper",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#f5f5f5",
+    "theme_color": "#4a90e2",
+    "description": "Your Personal Note Taking App",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

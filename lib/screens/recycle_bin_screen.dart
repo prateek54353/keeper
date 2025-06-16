@@ -16,11 +16,11 @@ class RecycleBinScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Hero(
+        title: const Hero(
           tag: 'recycleBinTitleHero',
           child: Material(
             color: Colors.transparent,
-            child: const Text('Recycle Bin'),
+            child: Text('Recycle Bin'),
           ),
         ),
         actions: [

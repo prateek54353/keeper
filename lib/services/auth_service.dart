@@ -31,8 +31,8 @@ class AuthService {
       // Sign in to Firebase with the Google credential
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
 
-      // Check if this is a new user
-      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
+      // Check if this is a new user and not anonymous
+      if ((userCredential.additionalUserInfo?.isNewUser ?? false) && userCredential.user?.isAnonymous == false) {
         // Store user data
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'email': userCredential.user!.email,
@@ -48,9 +48,26 @@ class AuthService {
     }
   }
 
+  // Sign in anonymously
+  Future<UserCredential> signInAnonymously() async {
+    try {
+      final userCredential = await _firebaseAuth.signInAnonymously();
+      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message);
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
-    await _googleSignIn.signOut(); // Sign out from Google as well
+    if (_googleSignIn.currentUser != null) {
+      await _googleSignIn.signOut();
+    }
     return await _firebaseAuth.signOut();
   }
 } 
